@@ -1,0 +1,58 @@
+services:
+  # 1. 数据库
+  db:
+    image: mysql:8.0
+    container_name: czo-note-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
+      MYSQL_DATABASE: ${DB_NAME:-czo_note}
+    # 如果你想通过 Navicat 远程看数据库，取消下面两行的注释：
+    ports:
+      - "3306:3306"
+    networks:
+      - internal_network  # 核心：数据库只在内部网络中
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # 2. 后端 Node 服务
+  server:
+    build: ./server
+    container_name: czo-note-server
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-123456}
+      DB_NAME: ${DB_NAME:-czo_note}
+      PORT: 3000
+    depends_on:
+      - db
+    networks:
+      - internal_network  # 用于连接数据库
+      - proxy_network     # 用于反向代理接入
+    # ports:
+    #   - "3000:3000"
+
+  # 3. 前端 Vue 服务
+  frontend:
+    build: .
+    container_name: czo-note-web
+    restart: always
+    depends_on:
+      - server
+    networks:
+      - proxy_network     # 仅接入代理网络
+    # ports:
+    #   - "8080:80"
+
+networks:
+  # 内部隔离网络，由 compose 自动创建
+  internal_network:
+    driver: bridge
+  # 你在 Ubuntu 上预先创建好的代理网络
+  proxy_network:
+    external: true
+
+volumes:
+  db_data:
