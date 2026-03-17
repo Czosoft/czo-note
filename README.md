@@ -1,4 +1,5 @@
 # czo-note
+> 本项目由czCode执行pm提出构思,由Junie AI完成实际coding和开发, 这个项目是VibeCoding思路的探索
 
 一个基于 Vue 3 和 Node.js 构建的现代 Markdown 记事本应用，支持数学公式、实时预览、拖拽排序及多种格式导出。
 
