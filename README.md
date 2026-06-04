@@ -1,5 +1,4 @@
 # czo-note
-> 本项目由czCode执行pm提出构思,由Junie AI完成实际coding和开发, 这个项目是VibeCoding思路的探索
 
 一个基于 Vue 3 和 Node.js 构建的现代 Markdown 记事本应用，支持数学公式、实时预览、拖拽排序及多种格式导出。
 
@@ -41,17 +40,8 @@ cd czo-note
 ```
 
 ### 2. 环境配置
-确保你已安装 Node.js (v20+) 和 MySQL 8.0。
-
-#### 数据库连接配置
-- **手动运行**：
-  修改 `server/index.js` 中的 `dbConfig` 配置对象（约第 13-19 行）：
-  - `host`: 数据库地址（默认 `localhost`）
-  - `user`: 数据库用户（默认 `root`）
-  - `password`: 数据库密码（默认 `123456`）
-  - `database`: 数据库名称（默认 `czo_note`）
-- **Docker 运行**：
-  修改根目录下的 `docker-compose.yml` 文件中的 `environment` 部分。
+确保你已安装 Node.js (v20+) 和 MySQL。
+在 `server` 目录下配置数据库连接信息。
 
 ### 3. 安装依赖
 ```bash
@@ -72,10 +62,6 @@ npm run server
 # 启动前端开发服务器
 npm run dev
 ```
-
-### 5. 访问
-- 前端访问地址：`http://localhost:5173`
-- 默认访问密码：`1234`
 
 ## 🐳 Docker 部署
 

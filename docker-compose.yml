@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
-      MYSQL_DATABASE: ${DB_NAME:-czo_note}
+      MYSQL_DATABASE: ${DB_NAME:-test}
     # 如果你想通过 Navicat 远程看数据库，取消下面两行的注释：
     ports:
       - "3306:3306"
@@ -24,7 +24,7 @@ services:
       DB_HOST: db
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-123456}
-      DB_NAME: ${DB_NAME:-czo_note}
+      DB_NAME: ${DB_NAME:-test}
       PORT: 3000
     depends_on:
       - db

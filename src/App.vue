@@ -1,19 +1,76 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
 import Notepad from './components/Notepad.vue'
 
 const isAuthorized = ref(false)
 const password = ref('')
+const subPassword = ref('')
+const mfaCode = ref('')
+const requireMfa = ref(false)
+const showSubLogin = ref(false)
 const currentView = ref('home') // 'home' 或 'notepad'
+const currentUser = ref(null)
 
-const checkPassword = () => {
-  console.log('Password entered:', password.value) // 调试信息
-  if (password.value.trim() === '1234') { 
-    isAuthorized.value = true
-  } else {
-    alert('密码错误')
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.has('noteId')) {
+    currentView.value = 'notepad'
+  }
+})
+
+const checkPassword = async () => {
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        username: 'admin', 
+        password: password.value,
+        code: mfaCode.value 
+      })
+    })
+    
+    const data = await res.json()
+    
+    if (res.ok) {
+      if (data.requireMfa) {
+        requireMfa.value = true
+        alert('请输入 2FA 验证码')
+      } else {
+        isAuthorized.value = true
+        currentUser.value = data.user
+        // 保存到 localStorage 方便其他组件使用
+        localStorage.setItem('currentUser', JSON.stringify(data.user))
+      }
+    } else {
+      alert(data.error || '登录失败')
+    }
+  } catch (error) {
+    console.error('Login error:', error)
+    alert('连接服务器失败')
+  }
+}
+
+const checkSubPassword = async () => {
+  if (!subPassword.value) return
+  try {
+    const res = await fetch('/api/auth/sub-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subPassword: subPassword.value })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      isAuthorized.value = true
+      currentUser.value = data.user
+      localStorage.setItem('currentUser', JSON.stringify(data.user))
+    } else {
+      alert(data.error || '子密码无效')
+    }
+  } catch (error) {
+    alert('连接服务器失败')
   }
 }
 </script>
@@ -21,15 +78,44 @@ const checkPassword = () => {
 <template>
   <div v-if="!isAuthorized" class="login-container">
     <div class="login-box">
-      <h3>请输入密码访问</h3>
-      <input 
-        v-model="password" 
-        type="password" 
-        @keyup.enter="checkPassword" 
-        placeholder="密码"
-        class="password-input"
-      />
-      <button @click="checkPassword" class="login-button">进入</button>
+      <h3>{{ showSubLogin ? '子密码登录' : '请输入密码访问' }}</h3>
+      
+      <template v-if="!showSubLogin">
+        <input 
+          v-model="password" 
+          type="password" 
+          @keyup.enter="checkPassword" 
+          placeholder="主密码"
+          class="password-input"
+          :disabled="requireMfa"
+        />
+        <div v-if="requireMfa" class="mfa-section">
+          <input 
+            v-model="mfaCode" 
+            type="text" 
+            @keyup.enter="checkPassword" 
+            placeholder="6 位 2FA 验证码"
+            class="password-input mfa-input"
+            maxlength="6"
+            autofocus
+          />
+        </div>
+        <button @click="checkPassword" class="login-button">{{ requireMfa ? '确认验证' : '进入' }}</button>
+        <button v-if="requireMfa" @click="requireMfa = false; mfaCode = ''" class="back-button">返回密码登录</button>
+        <button v-if="!requireMfa" @click="showSubLogin = true" class="sub-login-toggle">切换子密码登录</button>
+      </template>
+
+      <template v-else>
+        <input 
+          v-model="subPassword" 
+          type="text" 
+          @keyup.enter="checkSubPassword" 
+          placeholder="请输入子密码"
+          class="password-input"
+        />
+        <button @click="checkSubPassword" class="login-button">子密码进入</button>
+        <button @click="showSubLogin = false" class="sub-login-toggle">切换主密码登录</button>
+      </template>
     </div>
   </div>
 
@@ -249,6 +335,32 @@ body {
   background: var(--primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(66, 184, 131, 0.2);
+}
+
+.sub-login-toggle {
+  margin-top: 15px;
+  background: transparent;
+  color: #00a0e9;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+.back-button {
+  width: 100%;
+  margin-top: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-mute);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.mfa-input {
+  border-color: var(--primary-color);
+  letter-spacing: 2px;
+  font-weight: bold;
 }
 
 header {
